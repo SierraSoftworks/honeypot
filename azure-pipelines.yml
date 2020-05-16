@@ -1,0 +1,54 @@
+trigger:
+  - master
+  
+variables:
+  tag: '$(Build.BuildId)'
+  image: sierrasoftworks/honeypot
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: SierraSoftworks/devops-pipelines
+      endpoint: SierraSoftworks
+  
+extends:
+  template: kubernetes/app.yml@templates
+  parameters:
+    build:
+      - job: build_package
+        displayName: Build App Package
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - script: |
+              export GOOS=linux
+              export GOARCH=amd64
+              go build -o honeypot
+
+          - publish: ./honeypot
+            artifact: package
+      - job: build_docker
+        displayName: Build Docker Image
+        steps:
+        - task: Docker@2
+          displayName: Build Docker Image
+          inputs:
+            command: buildAndPush
+            dockerfile: 'Dockerfile'
+            containerRegistry: Docker Hub
+            repository: $(image)
+            tags: |
+              latest
+              $(tag)
+    manifests: ./.deploy
+    containers: |
+      $(image):$(tag)
+    staging:
+      namespace: honeypot-staging
+      environment: staging-honeypot-sierrasoftworks-com.honeypot-staging
+      healthcheck: https://staging.honeypot.sierrasoftworks.com/api/v1/stats
+    production:
+      namespace: honeypot-prod
+      environment: honeypot-sierrasoftworks-com.honeypot-prod
+      healthcheck: https://honeypot.sierrasoftworks.com/api/v1/stats
