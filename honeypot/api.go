@@ -26,6 +26,7 @@ func New() *Honeypot {
 	go func() {
 		r := mux.NewRouter()
 		r.Path("/api/v1/stats").Methods("GET").Handler(girder.NewHandler(h.getState))
+		r.Path("/api/v1/health").Methods("GET").Handler(girder.NewHandler(h.getHealth))
 
 		http.ListenAndServe(":8080", r)
 		h.wg.Done()
@@ -53,4 +54,8 @@ func (h *Honeypot) Host(name string, service func(record func(m *Metadata))) {
 
 func (h *Honeypot) getState(c *girder.Context) (interface{}, error) {
 	return h.State, nil
+}
+
+func (h *Honeypot) getHealth(c *girder.Context) (interface{}, error) {
+	return "OK", nil
 }
