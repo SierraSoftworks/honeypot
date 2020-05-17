@@ -8,11 +8,22 @@ spec:
     app.kubernetes.io/name: honeypot
     app.kubernetes.io/instance: honeypot-server
   ports:
-    - name: ssh
-      port: 22
-      targetPort: ssh
-      protocol: TCP
     - name: http
       port: 80
       targetPort: http
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: honeypot-ssh
+spec:
+  selector:
+    app.kubernetes.io/name: honeypot
+    app.kubernetes.io/instance: honeypot-server
+  type: LoadBalancer
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: ssh
       protocol: TCP
