@@ -39,6 +39,9 @@ spec:
             - name: ssh
               containerPort: 2222
               protocol: TCP
+            - name: telnet
+              containerPort: 2323
+              protocol: TCP
             - name: http
               containerPort: 8080
               protocol: TCP

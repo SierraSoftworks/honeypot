@@ -11,6 +11,7 @@ func main() {
 	hp := honeypot.New()
 
 	hp.Host("ssh", services.SSH(":2222"))
+	hp.Host("telnet", services.Telnet(":2323"))
 
 	log.Println("Starting Honeypot server on :8080")
 	hp.RunAPI(":8080")
