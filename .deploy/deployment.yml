@@ -42,7 +42,28 @@ spec:
             - name: telnet
               containerPort: 2323
               protocol: TCP
+            - name: rdp
+              containerPort: 3389
+              protocol: TCP
+            - name: vnc
+              containerPort: 5900
+              protocol: TCP
+            - name: mysql
+              containerPort: 3306
+              protocol: TCP
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+            - name: postgres
+              containerPort: 6379
+              protocol: TCP
+            - name: mongodb
+              containerPort: 27017
+              protocol: TCP
             - name: http
+              containerPort: 8081
+              protocol: TCP
+            - name: api
               containerPort: 8080
               protocol: TCP
           readinessProbe:
