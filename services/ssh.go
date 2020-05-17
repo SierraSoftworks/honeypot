@@ -13,15 +13,21 @@ func SSH(record func(m *honeypot.Metadata)) {
 
 	}, ssh.PasswordAuth(func(ctx ssh.Context, password string) bool {
 		record(&honeypot.Metadata{
-			SourceAddress: ctx.RemoteAddr().String(),
+			SourceAddress: getIPAddress(ctx.RemoteAddr()),
 			Credentials:   fmt.Sprintf("%s:%s", ctx.User(), password),
+			Features: []string{
+				ctx.ClientVersion(),
+			},
 		})
 
 		return false
 	}), ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
 		record(&honeypot.Metadata{
-			SourceAddress: ctx.RemoteAddr().String(),
+			SourceAddress: getIPAddress(ctx.RemoteAddr()),
 			Credentials:   fmt.Sprintf("%s:%s %s", ctx.User(), key.Type(), base64.RawStdEncoding.EncodeToString(key.Marshal()[len(key.Type()):])),
+			Features: []string{
+				ctx.ClientVersion(),
+			},
 		})
 
 		return false

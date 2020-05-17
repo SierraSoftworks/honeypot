@@ -1,9 +1,14 @@
 package honeypot
 
-import "log"
+import (
+	"log"
+	"sync"
+)
 
 type State struct {
-	Services []Service `json:"services"`
+	Services []*Service `json:"services"`
+
+	m sync.RWMutex
 }
 
 type Service struct {
@@ -13,15 +18,20 @@ type Service struct {
 	Credentials map[string]uint64 `json:"credentials"`
 	Resources   map[string]uint64 `json:"resources"`
 	Sources     map[string]uint64 `json:"sources"`
+	Features    map[string]uint64 `json:"features"`
 }
 
 type Metadata struct {
 	Credentials   string
 	Resource      string
 	SourceAddress string
+	Features      []string
 }
 
 func (s *State) Record(service string, m *Metadata) {
+	s.m.Lock()
+	defer s.m.Unlock()
+
 	for _, svc := range s.Services {
 		if svc.Name == service {
 			svc.Record(m)
@@ -29,12 +39,13 @@ func (s *State) Record(service string, m *Metadata) {
 		}
 	}
 
-	svc := Service{
+	svc := &Service{
 		Name:        service,
 		Attempts:    0,
 		Credentials: map[string]uint64{},
 		Resources:   map[string]uint64{},
 		Sources:     map[string]uint64{},
+		Features:    map[string]uint64{},
 	}
 
 	svc.Record(m)
@@ -55,6 +66,12 @@ func (s *Service) Record(m *Metadata) {
 
 	if m.SourceAddress != "" {
 		s.Sources[m.SourceAddress]++
+	}
+
+	if m.Features != nil {
+		for _, f := range m.Features {
+			s.Features[f]++
+		}
 	}
 
 	log.Printf("%s: New access attempt from [%s] for [%s] using [%s]", s.Name, m.SourceAddress, m.Resource, m.Credentials)

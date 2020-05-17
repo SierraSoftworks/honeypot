@@ -17,7 +17,7 @@ type Honeypot struct {
 func New() *Honeypot {
 	h := &Honeypot{
 		State: &State{
-			Services: []Service{},
+			Services: []*Service{},
 		},
 	}
 
@@ -53,6 +53,9 @@ func (h *Honeypot) Host(name string, service func(record func(m *Metadata))) {
 }
 
 func (h *Honeypot) getState(c *girder.Context) (interface{}, error) {
+	h.State.m.RLock()
+	defer h.State.m.RUnlock()
+
 	return h.State, nil
 }
 
