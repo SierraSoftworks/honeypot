@@ -29,12 +29,15 @@ func Telnet(addr string) honeypot.ServiceHost {
 }
 
 func telnetHandle(conn net.Conn, record func(m *honeypot.Metadata)) {
+	defer conn.Close()
+
 	scanner := bufio.NewScanner(conn)
 	scanner.Split(bufio.ScanLines)
 
 	info := &honeypot.Metadata{
 		SourceAddress: getIPAddress(conn.RemoteAddr()),
 	}
+	defer record(info)
 
 	conn.Write([]byte("login: "))
 	if scanner.Scan() {
@@ -46,7 +49,4 @@ func telnetHandle(conn net.Conn, record func(m *honeypot.Metadata)) {
 		}
 	}
 
-	conn.Close()
-
-	record(info)
 }
