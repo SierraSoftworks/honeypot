@@ -10,3 +10,9 @@ func getIPAddress(addr net.Addr) string {
 
 	return strings.Join(parts[:len(parts)-1], ":")
 }
+
+func getIPAddressFromString(addr string) string {
+	parts := strings.Split(addr, ":")
+
+	return strings.Join(parts[:len(parts)-1], ":")
+}

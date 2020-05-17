@@ -28,7 +28,7 @@ func Http(addr string) honeypot.ServiceHost {
 			}
 
 			record(&honeypot.Metadata{
-				SourceAddress: r.RemoteAddr,
+				SourceAddress: getIPAddressFromString(r.RemoteAddr),
 				Credentials:   creds,
 				Resource:      r.Method + " " + r.URL.String(),
 				Features: []string{
