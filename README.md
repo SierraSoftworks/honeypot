@@ -19,3 +19,19 @@ indicators of an attack.
 | MongoDB    | 27017 | Basic (TCP) |
 | PostgreSQL | 5432  | Basic (TCP) |
 | MySQL      | 3306  | Basic (TCP) |
+
+## Deployment
+This project can be deployed using Kubernetes. To do so, you should do the
+following:
+
+```bash
+kubectl create namespace honeypot-demo
+kubectl apply --namespace honeypot-demo \
+    -f https://raw.githubusercontent.com/SierraSoftworks/honeypot/master/.deploy/deployment.yml \
+    -f https://raw.githubusercontent.com/SierraSoftworks/honeypot/master/.deploy/service.yml
+```
+
+This will deploy the latest version of the honeypot on your Kubernetes cluster and expose it
+using a dedicated Service (`type: LoadBalancer`). It will also create a new service called
+`honeypot-server` which hosts the API on its `http` port. To access this, you can create an
+ingress or use `kubectl proxy`.
