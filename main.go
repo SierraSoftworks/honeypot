@@ -10,8 +10,11 @@ import (
 func main() {
 	hp := honeypot.New()
 
-	hp.Host("ssh", services.SSH)
+	hp.Host("ssh", services.SSH(":2222"))
 
-	log.Println("Started Honeypot server on :8080")
+	log.Println("Starting Honeypot server on :8080")
+	hp.RunAPI(":8080")
+
+	log.Println("Waiting for honeypots to shutdown")
 	hp.Wait()
 }
