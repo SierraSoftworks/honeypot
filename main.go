@@ -17,7 +17,7 @@ func main() {
 
 	hp.Host("http", services.Http(":8081"))
 
-	hp.Host("redis", services.Tcp(":6379"))
+	hp.Host("redis", services.Redis(":6379"))
 	hp.Host("postgres", services.Tcp(":5432"))
 	hp.Host("mysql", services.Tcp(":3306"))
 	hp.Host("mongodb", services.Tcp(":27017"))

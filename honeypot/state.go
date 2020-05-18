@@ -23,7 +23,7 @@ type Service struct {
 
 type Metadata struct {
 	Credentials   string
-	Resource      string
+	Resources     []string
 	SourceAddress string
 	Features      []string
 }
@@ -60,8 +60,10 @@ func (s *Service) Record(m *Metadata) {
 		s.Credentials[m.Credentials]++
 	}
 
-	if m.Resource != "" {
-		s.Resources[m.Resource]++
+	if m.Resources != nil {
+		for _, r := range m.Resources {
+			s.Resources[r]++
+		}
 	}
 
 	if m.SourceAddress != "" {
@@ -74,5 +76,5 @@ func (s *Service) Record(m *Metadata) {
 		}
 	}
 
-	log.Printf("%s: New access attempt from [%s] for [%s] using [%s]", s.Name, m.SourceAddress, m.Resource, m.Credentials)
+	log.Printf("%s: New access attempt from [%s] for [%s] using [%s]", s.Name, m.SourceAddress, m.Resources, m.Credentials)
 }

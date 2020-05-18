@@ -30,7 +30,9 @@ func Http(addr string) honeypot.ServiceHost {
 			record(&honeypot.Metadata{
 				SourceAddress: getIPAddressFromString(r.RemoteAddr),
 				Credentials:   creds,
-				Resource:      r.Method + " " + r.URL.String(),
+				Resources: []string{
+					r.Method + " " + r.URL.String(),
+				},
 				Features: []string{
 					r.Header.Get("User-Agent"),
 				},
