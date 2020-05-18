@@ -37,6 +37,7 @@ func telnetHandle(conn net.Conn, record func(m *honeypot.Metadata)) {
 
 	info := &honeypot.Metadata{
 		SourceAddress: getIPAddress(conn.RemoteAddr()),
+		Resources:     []string{},
 	}
 	defer record(info)
 
@@ -47,15 +48,20 @@ func telnetHandle(conn net.Conn, record func(m *honeypot.Metadata)) {
 		conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 
 		if n > 0 && isText(string(eager[:n])) {
-			info.Resources = []string{string(eager[:n])}
-		} else {
-			hash := md5.New()
-			hash.Write(eager[:n])
-
-			io.Copy(hash, conn)
-
-			info.Resources = []string{fmt.Sprintf("md5:%x", md5.Sum([]byte{}))}
+			suffix := ""
+			if n == 256 {
+				suffix = "..."
+			}
+			info.Resources = append(info.Resources, string(eager[:n])+suffix)
 		}
+
+		hash := md5.New()
+		hash.Write(eager[:n])
+
+		io.Copy(hash, conn)
+
+		info.Resources = append(info.Resources, fmt.Sprintf("md5:%x", md5.Sum([]byte{})))
+		return
 	} else {
 		conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 
