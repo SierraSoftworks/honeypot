@@ -5,6 +5,7 @@ import (
 
 	"github.com/SierraSoftworks/girder"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func (h *Host) RunAPI(addr string) error {
@@ -12,6 +13,7 @@ func (h *Host) RunAPI(addr string) error {
 	r.Path("/api/v1/stats").Methods("GET").Handler(girder.NewHandler(h.getStats))
 	r.Path("/api/v1/counts").Methods("GET").Handler(girder.NewHandler(h.getCounts))
 	r.Path("/api/v1/health").Methods("GET").Handler(girder.NewHandler(h.getHealth))
+	r.Path("/statz").Methods("GET").Handler(promhttp.Handler())
 
 	return http.ListenAndServe(":8080", r)
 }
