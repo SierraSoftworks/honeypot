@@ -2,8 +2,12 @@ package services
 
 import (
 	"bufio"
+	"crypto/md5"
+	"fmt"
+	"io"
 	"log"
 	"net"
+	"time"
 
 	"github.com/sierrasoftworks/ssh-honeypot/honeypot"
 )
@@ -31,21 +35,41 @@ func Telnet(addr string) honeypot.ServiceHost {
 func telnetHandle(conn net.Conn, record func(m *honeypot.Metadata)) {
 	defer conn.Close()
 
-	scanner := bufio.NewScanner(conn)
-	scanner.Split(bufio.ScanLines)
-
 	info := &honeypot.Metadata{
 		SourceAddress: getIPAddress(conn.RemoteAddr()),
 	}
 	defer record(info)
 
-	conn.Write([]byte("login: "))
-	if scanner.Scan() {
-		info.Credentials = scanner.Text() + ":"
+	conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	eager := make([]byte, 256)
 
-		conn.Write([]byte("password: "))
+	if n, err := conn.Read(eager); err == nil {
+		conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+
+		if n > 0 && isText(string(eager[:n])) {
+			info.Resources = []string{string(eager[:n])}
+		} else {
+			hash := md5.New()
+			hash.Write(eager[:n])
+
+			io.Copy(hash, conn)
+
+			info.Resources = []string{fmt.Sprintf("md5:%x", md5.Sum([]byte{}))}
+		}
+	} else {
+		conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+
+		scanner := bufio.NewScanner(conn)
+		scanner.Split(bufio.ScanLines)
+
+		conn.Write([]byte("login: "))
 		if scanner.Scan() {
-			info.Credentials = info.Credentials + scanner.Text()
+			info.Credentials = scanner.Text() + ":"
+
+			conn.Write([]byte("password: "))
+			if scanner.Scan() {
+				info.Credentials = info.Credentials + scanner.Text()
+			}
 		}
 	}
 
