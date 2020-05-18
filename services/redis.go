@@ -9,6 +9,11 @@ import (
 	"github.com/sierrasoftworks/ssh-honeypot/honeypot"
 )
 
+var redisResponses = map[string]string{
+	"PING": "+PONG\r\n",
+	"QUIT": "+OK\r\n",
+}
+
 func Redis(addr string) honeypot.ServiceHost {
 	return func(record func(m *honeypot.Metadata)) {
 		ln, err := net.Listen("tcp", addr)
@@ -42,8 +47,17 @@ func redisHandle(conn net.Conn, record func(m *honeypot.Metadata)) {
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
-		meta.Resources = append(meta.Resources, strings.TrimSpace(scanner.Text()))
+		meta.Resources = append(meta.Resources, scanner.Text())
 
-		conn.Write([]byte("-$-1\r\n"))
+		cmd := strings.SplitN(scanner.Text(), " ", 1)[0]
+		if resp, ok := redisResponses[cmd]; ok {
+			conn.Write([]byte(resp))
+		} else {
+			conn.Write([]byte("-$-1\r\n"))
+		}
+
+		if cmd == "QUIT" {
+			return
+		}
 	}
 }
