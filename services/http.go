@@ -27,7 +27,7 @@ func Http(addr string) honeypot.ServiceHost {
 				}
 			}
 
-			record(&honeypot.Metadata{
+			info := &honeypot.Metadata{
 				SourceAddress: getIPAddressFromString(r.RemoteAddr),
 				Credentials:   creds,
 				Resources: []string{
@@ -36,7 +36,10 @@ func Http(addr string) honeypot.ServiceHost {
 				Features: []string{
 					r.Header.Get("User-Agent"),
 				},
-			})
+			}
+			defer record(info)
+
+			capturePayload(r.Body, info)
 
 			w.Header().Add("WWW-Authenticate", `Basic realm="Admin Portal", charset="UTF-8"`)
 			w.WriteHeader(401)
