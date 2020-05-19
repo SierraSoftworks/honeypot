@@ -26,7 +26,7 @@ func getIPAddressFromString(addr string) string {
 
 func isText(s string) bool {
 	for _, c := range s {
-		if c > unicode.MaxLatin1 {
+		if c > unicode.MaxLatin1 || c < 0x20 {
 			return false
 		}
 	}
@@ -36,7 +36,7 @@ func isText(s string) bool {
 
 func capturePayload(r io.Reader, m *honeypot.Metadata) (int64, error) {
 	hash := md5.New()
-	buf := bytes.NewBuffer([]byte{})
+	buf := new(bytes.Buffer)
 
 	n, err := io.Copy(hash, io.TeeReader(r, LimitWriter(buf, 128)))
 
@@ -44,7 +44,7 @@ func capturePayload(r io.Reader, m *honeypot.Metadata) (int64, error) {
 		m.Resources = append(m.Resources, fmt.Sprintf("md5:%x", hash.Sum([]byte{})))
 
 		if isText(buf.String()) {
-			m.Resources = append(m.Resources, buf.String()+"...")
+			m.Resources = append(m.Resources, fmt.Sprintf("%s...", strings.TrimSpace(buf.String())))
 		}
 	}
 
