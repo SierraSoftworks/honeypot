@@ -24,7 +24,6 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
 
     steps:
       - uses: actions/checkout@v2
@@ -33,7 +32,7 @@ jobs:
         run: docker build . --file Dockerfile
           
   push:
-
+    needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
 
