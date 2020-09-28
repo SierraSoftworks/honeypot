@@ -1,0 +1,154 @@
+name: Deploy Service
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  MANIFESTS: |
+    ./.deploy/deployment.yml
+    ./.deploy/service.yml
+  IMAGE: sierrasoftworks/honeypot
+
+  STAGING_CLUSTER: k8s-common
+  STAGING_RESOURCEGROUP: app-common
+  STAGING_NAMESPACE: "honeypot-staging"
+  STAGING_HEALTHCHECK: "https://staging.honeypot.sierrasoftworks.com/api/v1/stats"
+  
+  LIVE_CLUSTER: k8s-common
+  LIVE_RESOURCEGROUP: app-common
+  LIVE_NAMESPACE: "honeypot-prod"
+  LIVE_HEALTHCHECK: "https://honeypot.sierrasoftworks.com/api/v1/stats"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Dockerfile
+        run: docker build . --file Dockerfile
+          
+  push:
+
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build image
+        run: docker build . --file Dockerfile --tag image
+
+      - name: Log into registries
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.DOCKER_HUB }}" | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+          
+      - name: Calculate version number
+        id: version
+        run: |
+          VERSION=$(git describe --tags 2>/dev/null || git rev-parse --short HEAD)
+          echo "::set-output name=version::$VERSION"
+          
+      - name: Push image to GitHub
+        run: |
+          IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/${{ github.event.repository.name }}
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          docker tag image $IMAGE_ID:latest
+          docker push $IMAGE_ID:latest
+          docker tag image $IMAGE_ID:${{ steps.version.outputs.version }}
+          docker push $IMAGE_ID:${{ steps.version.outputs.version }}
+          
+      - name: Push image to Docker Hub
+        run: |
+          IMAGE_ID=${{ env.IMAGE }}
+          echo IMAGE_ID=$IMAGE_ID
+          docker tag image $IMAGE_ID:latest
+          docker push $IMAGE_ID:latest
+          docker tag image $IMAGE_ID:${{ steps.version.outputs.version }}
+          docker push $IMAGE_ID:${{ steps.version.outputs.version }}
+          
+  deploy-staging:
+    needs: push
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: actions/checkout@v2
+          
+      - name: Calculate version number
+        id: version
+        run: |
+          VERSION=$(git describe --tags 2>/dev/null || git rev-parse --short HEAD)
+          echo "::set-output name=version::$VERSION"
+        
+      - uses: azure/aks-set-context@v1
+        with:
+          creds: "${{ secrets.AZURE_CREDENTIALS }}"
+          resource-group: "${{ env.STAGING_RESOURCEGROUP }}"
+          cluster-name: "${{ env.STAGING_CLUSTER }}"
+      
+      - uses: azure/k8s-deploy@v1
+        with:
+          namespace: "${{ env.STAGING_NAMESPACE }}"
+          manifests: "${{ env.MANIFESTS }}"
+          images: |
+            "docker.pkg.github.com/${{ github.repository }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
+  
+  healthcheck-staging:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Probe
+        uses: Jtalk/url-health-check-action@v1.3
+        with:
+          url: ${{ env.STAGING_HEALTHCHECK }}
+          max-attempts: 5
+          retry-delay: 10s
+          follow-redirect: true
+          
+  
+  deploy-live:
+    needs: healthcheck-staging
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: actions/checkout@v2
+          
+      - name: Calculate version number
+        id: version
+        run: |
+          VERSION=$(git describe --tags 2>/dev/null || git rev-parse --short HEAD)
+          echo "::set-output name=version::$VERSION"
+        
+      - uses: azure/aks-set-context@v1
+        with:
+          creds: "${{ secrets.AZURE_CREDENTIALS }}"
+          resource-group: "${{ env.LIVE_RESOURCEGROUP }}"
+          cluster-name: "${{ env.LIVE_CLUSTER }}"
+      
+      - uses: azure/k8s-deploy@v1
+        with:
+          namespace: "${{ env.LIVE_NAMESPACE }}"
+          manifests: "${{ env.MANIFESTS }}"
+          images: |
+            "docker.pkg.github.com/${{ github.repository }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
+  
+  healthcheck-live:
+    needs: deploy-live
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Probe
+        uses: Jtalk/url-health-check-action@v1.3
+        with:
+          url: ${{ env.LIVE_HEALTHCHECK }}
+          max-attempts: 5
+          retry-delay: 10s
+          follow-redirect: true
