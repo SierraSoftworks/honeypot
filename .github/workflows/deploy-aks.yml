@@ -96,7 +96,8 @@ jobs:
           namespace: "${{ env.STAGING_NAMESPACE }}"
           manifests: "${{ env.MANIFESTS }}"
           images: |
-            "docker.pkg.github.com/${{ github.repository }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
+            docker.pkg.github.com/${{ github.repository }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
   
   healthcheck-staging:
     needs: deploy-staging
@@ -137,7 +138,8 @@ jobs:
           namespace: "${{ env.LIVE_NAMESPACE }}"
           manifests: "${{ env.MANIFESTS }}"
           images: |
-            "docker.pkg.github.com/${{ github.repository }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}"
+            docker.pkg.github.com/${{ github.repository }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
   
   healthcheck-live:
     needs: deploy-live
