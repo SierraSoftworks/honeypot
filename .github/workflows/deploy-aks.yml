@@ -85,7 +85,7 @@ jobs:
           VERSION=$(git describe --tags 2>/dev/null || git rev-parse --short HEAD)
           echo "::set-output name=version::$VERSION"
         
-      - uses: azure/aks-set-context@v1
+      - uses: azure/aks-set-context@v3
         with:
           creds: "${{ secrets.AZURE_CREDENTIALS }}"
           resource-group: "${{ env.STAGING_RESOURCEGROUP }}"
@@ -127,7 +127,7 @@ jobs:
           VERSION=$(git describe --tags 2>/dev/null || git rev-parse --short HEAD)
           echo "::set-output name=version::$VERSION"
         
-      - uses: azure/aks-set-context@v1
+      - uses: azure/aks-set-context@v3
         with:
           creds: "${{ secrets.AZURE_CREDENTIALS }}"
           resource-group: "${{ env.LIVE_RESOURCEGROUP }}"
