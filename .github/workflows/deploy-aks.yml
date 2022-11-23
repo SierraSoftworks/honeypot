@@ -91,7 +91,7 @@ jobs:
           resource-group: "${{ env.STAGING_RESOURCEGROUP }}"
           cluster-name: "${{ env.STAGING_CLUSTER }}"
       
-      - uses: azure/k8s-deploy@v1
+      - uses: azure/k8s-deploy@v4
         with:
           namespace: "${{ env.STAGING_NAMESPACE }}"
           manifests: "${{ env.MANIFESTS }}"
@@ -133,7 +133,7 @@ jobs:
           resource-group: "${{ env.LIVE_RESOURCEGROUP }}"
           cluster-name: "${{ env.LIVE_CLUSTER }}"
       
-      - uses: azure/k8s-deploy@v1
+      - uses: azure/k8s-deploy@v4
         with:
           namespace: "${{ env.LIVE_NAMESPACE }}"
           manifests: "${{ env.MANIFESTS }}"
